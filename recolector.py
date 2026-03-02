@@ -40,11 +40,9 @@ class RecolectorGestos:
             ord('5'): 'ok',                 # 👌
             ord('6'): 'pulgar',             # 👍
             ord('7'): 'paz',                # ✌️
-            ord('8'): 'spiderman',          # 🕸️
+            ord('8'): 'spiderman',          # 🫰
             ord('9'): 'llamame',            # 🤙
             ord('0'): 'mano_abierta',       # ✋
-            
-            # NUEVOS GESTOS POPULARES (4)
             ord('-'): 'indice_izquierda',   # 👈
             ord('='): 'indice_derecha',     # 👉
             ord('['): 'indice_arriba',      # 👆
