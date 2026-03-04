@@ -42,11 +42,11 @@ class RecolectorGestos:
             ord('8'): 'spiderman',          # 🫰
             ord('9'): 'llamame',            # 🤙
             ord('0'): 'mano_abierta',       # ✋
-            ord('-'): 'indice_izquierda',   # 👈
-            ord('='): 'indice_derecha',     # 👉
-            ord('['): 'indice_arriba',      # 👆
-            ord(']'): 'indice_abajo',       # 👇
-            ord(';'): 'dedos_cruzados',     # 🤞
+            ord('j'): 'indice_izquierda',   # 👈
+            ord('k'): 'indice_derecha',     # 👉
+            ord('p'): 'indice_arriba',      # 👆
+            ord('o'): 'indice_abajo',       # 👇
+            ord('l'): 'dedos_cruzados',     # 🤞
         }
         
         # Contadores
