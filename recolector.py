@@ -32,8 +32,8 @@ class RecolectorGestos:
         
         self.gestos = {
             # Gestos originales (10)
-            ord('1'): 'italiano',          # 🤌
-            ord('2'): 'te_quiero',         # 🤟
+            ord('1'): 'italiano',           # 🤌
+            ord('2'): 'te_quiero',          # 🤟
             ord('3'): 'rock',               # 🤘
             ord('4'): 'corazon',            # 🫶
             ord('5'): 'ok',                 # 👌
