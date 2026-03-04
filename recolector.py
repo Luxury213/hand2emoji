@@ -15,7 +15,7 @@ class RecolectorGestos:
     def __init__(self):
         print("🎓 Inicializando recolector de gestos...")
         
-        # Inicializar MediaPipe
+        
         self.mp_hands = mp.solutions.hands
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
@@ -28,9 +28,8 @@ class RecolectorGestos:
             min_tracking_confidence=0.5
         )
         
-        # ============================================================
         # GESTOS A RECOLECTAR - 14 GESTOS POPULARES
-        # ============================================================
+        
         self.gestos = {
             # Gestos originales (10)
             ord('1'): 'italiano',          # 🤌
