@@ -15,7 +15,6 @@ class RecolectorGestos:
     def __init__(self):
         print("🎓 Inicializando recolector de gestos...")
         
-        
         self.mp_hands = mp.solutions.hands
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
@@ -28,8 +27,9 @@ class RecolectorGestos:
             min_tracking_confidence=0.5
         )
         
+        # ============================================================
         # GESTOS A RECOLECTAR - 14 GESTOS POPULARES
-        
+        # ============================================================
         self.gestos = {
             # Gestos originales (10)
             ord('1'): 'italiano',           # 🤌
@@ -39,9 +39,11 @@ class RecolectorGestos:
             ord('5'): 'ok',                 # 👌
             ord('6'): 'pulgar',             # 👍
             ord('7'): 'paz',                # ✌️
-            ord('8'): 'spiderman',          # 🫰
+            ord('8'): 'puno',                # ✊ (REEMPLAZADO)
             ord('9'): 'llamame',            # 🤙
             ord('0'): 'mano_abierta',       # ✋
+            
+            # Nuevos gestos populares (4)
             ord('j'): 'indice_izquierda',   # 👈
             ord('k'): 'indice_derecha',     # 👉
             ord('p'): 'indice_arriba',      # 👆
@@ -153,7 +155,7 @@ class RecolectorGestos:
             emoji_map = {
                 'italiano': '🤌', 'te_quiero': '🤟', 'rock': '🤘',
                 'corazon': '🫶', 'ok': '👌', 'pulgar': '👍',
-                'paz': '✌️', 'spiderman': '🕸️', 'llamame': '🤙',
+                'paz': '✌️', 'puno': '✊', 'llamame': '🤙',
                 'mano_abierta': '✋', 'indice_izquierda': '👈',
                 'indice_derecha': '👉', 'indice_arriba': '👆',
                 'indice_abajo': '👇', 'dedos_cruzados': '🤞'
@@ -192,7 +194,7 @@ class RecolectorGestos:
             emoji_map = {
                 'italiano': '🤌', 'te_quiero': '🤟', 'rock': '🤘',
                 'corazon': '🫶', 'ok': '👌', 'pulgar': '👍',
-                'paz': '✌️', 'spiderman': '🕸️', 'llamame': '🤙',
+                'paz': '✌️', 'puno': '✊', 'llamame': '🤙',
                 'mano_abierta': '✋', 'indice_izquierda': '👈',
                 'indice_derecha': '👉', 'indice_arriba': '👆',
                 'indice_abajo': '👇', 'dedos_cruzados': '🤞'
@@ -206,58 +208,45 @@ class RecolectorGestos:
         
         # Abrir cámara
         cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 800)  # Un poco más grande para ver mejor
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 800)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)
         cap.set(cv2.CAP_PROP_FPS, 30)
         
         if not cap.isOpened():
             print("❌ ERROR: No se pudo abrir la cámara")
-            print("   Verifica que ninguna otra aplicación la esté usando")
             return
         
         print("✅ Cámara abierta correctamente")
         print("⏳ Esperando detección de manos...\n")
         
-        # Variables para estadísticas
         frames_procesados = 0
         tiempo_inicio = time.time()
         
         while True:
             ret, frame = cap.read()
             if not ret:
-                print("❌ ERROR: No se pudo leer el frame")
                 break
             
             frames_procesados += 1
-            
-            # Efecto espejo (más natural)
             frame = cv2.flip(frame, 1)
             h, w, _ = frame.shape
             
-            # Convertir a RGB (MediaPipe requiere RGB)
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
-            # Procesar con MediaPipe
             resultados = self.hands.process(frame_rgb)
             
-            # Variables para mostrar
             mano_detectada = False
             
-            # Si se detectan manos
             if resultados.multi_hand_landmarks:
                 for hand_landmarks in resultados.multi_hand_landmarks:
                     mano_detectada = True
                     
-                    # Extraer coordenadas de los 21 puntos
                     landmarks = []
                     for lm in hand_landmarks.landmark:
                         x, y = int(lm.x * w), int(lm.y * h)
                         landmarks.append((x, y))
                     
-                    # Guardar en buffer (para evitar movimientos bruscos)
                     self.buffer_landmarks.append(landmarks)
                     
-                    # DIBUJAR puntos y conexiones de la mano
                     self.mp_drawing.draw_landmarks(
                         frame,
                         hand_landmarks,
@@ -266,80 +255,60 @@ class RecolectorGestos:
                         self.mp_drawing_styles.get_default_hand_connections_style()
                     )
             
-            # Dibujar interfaz
             frame = self.dibujar_interfaz(frame, mano_detectada, h)
             
-            # Mostrar FPS
             tiempo_actual = time.time()
             fps = frames_procesados / (tiempo_actual - tiempo_inicio + 0.001)
             cv2.putText(frame, f"FPS: {int(fps)}", (w-100, 30),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
             
-            # Mostrar frame
             cv2.imshow('RECOLECTOR - 14 Gestos', frame)
             
-            # Procesar teclas
             key = cv2.waitKey(1) & 0xFF
             
-            # Salir con 'q'
             if key == ord('q'):
                 break
             
-            # Guardar gesto si:
-            # 1. Se presionó una tecla válida
-            # 2. Hay landmarks en el buffer
-            # 3. Pasó suficiente tiempo desde el último guardado
             tiempo_actual = time.time()
             if (key in self.gestos and 
                 self.buffer_landmarks and 
                 tiempo_actual - self.ultimo_guardado > self.intervalo_guardado):
                 
                 nombre_gesto = self.gestos[key]
-                
-                # Usar el último landmarks del buffer
                 landmarks = self.buffer_landmarks[-1]
-                
-                # Extraer características
                 caracteristicas = self.extraer_caracteristicas(landmarks)
                 
-                # Guardar en CSV
                 try:
                     with open(self.csv_file, 'a', newline='', encoding='utf-8') as f:
                         writer = csv.writer(f)
                         writer.writerow([nombre_gesto] + caracteristicas)
                     
-                    # Actualizar contador
                     self.contadores[nombre_gesto] += 1
                     self.ultimo_guardado = tiempo_actual
                     
-                    # Emoji para feedback
                     emoji_map = {
                         'italiano': '🤌', 'te_quiero': '🤟', 'rock': '🤘',
                         'corazon': '🫶', 'ok': '👌', 'pulgar': '👍',
-                        'paz': '✌️', 'spiderman': '🕸️', 'llamame': '🤙',
+                        'paz': '✌️', 'puno': '✊', 'llamame': '🤙',
                         'mano_abierta': '✋', 'indice_izquierda': '👈',
                         'indice_derecha': '👉', 'indice_arriba': '👆',
                         'indice_abajo': '👇', 'dedos_cruzados': '🤞'
                     }
                     emoji = emoji_map.get(nombre_gesto, '🫱')
                     
-                    # Feedback visual en consola
                     total_gesto = self.contadores[nombre_gesto]
                     print(f"✅ Guardado: {emoji} {nombre_gesto} ({total_gesto}/30)")
                     
-                    # Si llegó a 30, mensaje especial
                     if total_gesto == 30:
-                        print(f"🎉 ¡Completaste {emoji} {nombre_gesto}! Sigue con otro gesto")
+                        print(f"🎉 ¡Completaste {emoji} {nombre_gesto}!")
                     
                 except Exception as e:
                     print(f"❌ Error al guardar: {e}")
         
-        # Cerrar todo
         cap.release()
         cv2.destroyAllWindows()
         self.hands.close()
         
-        # Resumen final
         print("\n" + "=" * 70)
         print("📊 RESUMEN FINAL DE RECOLECCIÓN")
         print("=" * 70)
@@ -351,7 +320,7 @@ class RecolectorGestos:
         emoji_map = {
             'italiano': '🤌', 'te_quiero': '🤟', 'rock': '🤘',
             'corazon': '🫶', 'ok': '👌', 'pulgar': '👍',
-            'paz': '✌️', 'spiderman': '🕸️', 'llamame': '🤙',
+            'paz': '✌️', 'puno': '✊', 'llamame': '🤙',
             'mano_abierta': '✋', 'indice_izquierda': '👈',
             'indice_derecha': '👉', 'indice_arriba': '👆',
             'indice_abajo': '👇', 'dedos_cruzados': '🤞'
@@ -371,7 +340,6 @@ class RecolectorGestos:
             print("🚀 Ahora puedes entrenar el modelo con 'entrenador.py'")
         else:
             print("💪 Sigue recolectando los gestos que faltan")
-            print("   Vuelve a ejecutar el programa cuando quieras continuar")
         print("=" * 70)
 
 if __name__ == "__main__":
@@ -379,7 +347,6 @@ if __name__ == "__main__":
         recolector = RecolectorGestos()
         recolector.run()
     except KeyboardInterrupt:
-        print("\n\n👋 Programa interrumpido por el usuario")
+        print("\n\n👋 Programa interrumpido")
     except Exception as e:
-        print(f"\n❌ Error inesperado: {e}")
-        print("Por favor, copia este error y compártelo para ayudarte")
+        print(f"\n❌ Error: {e}")
