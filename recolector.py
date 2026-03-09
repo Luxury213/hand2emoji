@@ -29,7 +29,7 @@ class RecolectorGestos:
     # ----------------------------------------------------------
     EMOJI_MAP = {
         'italiano':         '🤌',
-        'te_quiero':        '🤟',
+        'rock con pulgar':        '🤟',
         'rock':             '🤘',
         'corazon':          '🫶',
         'ok':               '👌',
@@ -48,7 +48,7 @@ class RecolectorGestos:
     # Tecla → nombre del gesto
     GESTOS = {
         ord('1'): 'italiano',
-        ord('2'): 'te_quiero',
+        ord('2'): 'rock con pulgar',
         ord('3'): 'rock',
         ord('4'): 'corazon',
         ord('5'): 'ok',
