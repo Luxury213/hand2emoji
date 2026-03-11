@@ -43,6 +43,9 @@ class RecolectorGestos:
         'indice_arriba':    '👆',
         'indice_abajo':     '👇',
         'dedos_cruzados':   '🤞',
+        'fuck_you': '🖕',
+        'te_apunto': '🫵',
+        'pinza':     '🤏',
     }
 
     # Tecla → nombre del gesto
@@ -62,6 +65,9 @@ class RecolectorGestos:
         ord('p'): 'indice_arriba',
         ord('o'): 'indice_abajo',
         ord('l'): 'dedos_cruzados',
+        ord('f'): 'fuck_you',
+        ord('t'): 'te_apunto',
+        ord('m'): 'pinza',
     }
 
     def __init__(self):
