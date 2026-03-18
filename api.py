@@ -212,14 +212,3 @@ def health():
 # ============================================================
 # MAIN
 # ============================================================
-if __name__ == "__main__":
-    import uvicorn
-    print("=" * 55)
-    print("🚀 Iniciando Hand2Emoji API")
-    print("=" * 55)
-    print("  Docs:   http://localhost:8000/docs")
-    print("  Health: http://localhost:8000/health")
-    print("  Gestos: http://localhost:8000/gestos")
-    print("=" * 55)
-    port = int(os.environ.get("PORT", 8000))
-uvicorn.run(app, host="0.0.0.0", port=port, reload=False)
