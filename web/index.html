@@ -318,7 +318,9 @@
 
 <script>
 // ── CONFIG ──
-const API_URL    = 'http://localhost:8000';
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:8000'
+  : 'https://hand2emoji-production.up.railway.app';
 const HOLD_MS    = 900;   // ms que debe mantenerse el gesto
 const COOL_MS    = 1000;  // ms de pausa tras confirmar
 const THROTTLE   = 180;   // ms entre llamadas a la API
