@@ -107,7 +107,7 @@ class RecolectorGestos:
     # ----------------------------------------------------------
     def _inicializar_csv(self):
         if os.path.exists(CSV_FILE):
-            # Backup para no perder datos accidentalmente
+            
             backup = CSV_FILE.replace('.csv', '_backup.csv')
             shutil.copy2(CSV_FILE, backup)
             print(f"💾 Backup creado: {backup}")
@@ -137,9 +137,9 @@ class RecolectorGestos:
         except Exception as e:
             print(f"⚠️  No se pudieron cargar contadores: {e}")
 
-    # ----------------------------------------------------------
-    # EXTRACCIÓN DE CARACTERÍSTICAS (MEJORADA)
-    # ----------------------------------------------------------
+ 
+    # EXTRACCIÓN DE CARACTERÍSTICAS 
+   
     def extraer_caracteristicas(self, landmarks_raw):
         """
         Convierte los 21 puntos MediaPipe en 63 valores normalizados.

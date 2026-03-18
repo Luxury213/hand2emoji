@@ -26,7 +26,7 @@ RANDOM_STATE = 42
 N_ESTIMATORS = 200    # Árboles en el Random Forest
 
 # ============================================================
-# EMOJI MAP (para mostrar resultados bonitos)
+# EMOJI MAP
 # ============================================================
 EMOJI_MAP = {
     'italiano':         '🤌',

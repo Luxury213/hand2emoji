@@ -12,15 +12,15 @@ import pickle
 import os
 import time
 
-# ============================================================
+
 # CONFIGURACIÓN
-# ============================================================
+
 MODELS_DIR       = 'models'
 CONFIANZA_MINIMA = 0.6
 
-# ============================================================
+
 # APP FASTAPI
-# ============================================================
+
 app = FastAPI(
     title="Hand2Emoji API",
     description="Detecta gestos de mano y retorna el emoji correspondiente",
@@ -35,9 +35,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ============================================================
-# MODELOS (se cargan una sola vez al iniciar el servidor)
-# ============================================================
+
+# MODELOS 
+
 class ModeloHandler:
     def __init__(self):
         print("🤖 Cargando modelos...")
@@ -75,7 +75,7 @@ class ModeloHandler:
         confianza = float(proba[idx])
         gesto  = self.le.classes_[idx]
 
-        # Top 3 predicciones (útil para debug)
+        # Top 3 predicciones 
         top3_idx = np.argsort(proba)[::-1][:3]
         top3 = [
             {
@@ -99,9 +99,9 @@ class ModeloHandler:
 handler = ModeloHandler()
 
 
-# ============================================================
+
 # SCHEMAS (estructura de los datos de entrada y salida)
-# ============================================================
+
 class LandmarksInput(BaseModel):
     """
     Entrada del endpoint /predict
@@ -131,13 +131,13 @@ class PrediccionOutput(BaseModel):
     tiempo_ms: float
 
 
-# ============================================================
+
 # ENDPOINTS
-# ============================================================
+
 
 @app.get("/")
 def root():
-    """Endpoint de bienvenida — confirma que la API está viva"""
+    """Endpoint de bienvenida """
     return {
         "mensaje": "Hand2Emoji API funcionando! 🤌",
         "version": "1.0.0",
@@ -148,7 +148,7 @@ def root():
 
 @app.get("/gestos")
 def listar_gestos():
-    """Lista todos los gestos que el modelo puede detectar"""
+    """Lista """
     return {
         "total": len(handler.gestos),
         "gestos": [

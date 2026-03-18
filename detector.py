@@ -192,9 +192,9 @@ class DetectorGestos:
 
         return frame
 
-    # ----------------------------------------------------------
+  
     # DIBUJAR EMOJI GRANDE EN EL CENTRO
-    # ----------------------------------------------------------
+  
     def dibujar_emoji_overlay(self, frame, h, w):
         """
         Muestra el emoji grande en el centro-derecha de la pantalla
