@@ -12,7 +12,6 @@ __pycache__/
 # Datos generados
 data/
 *.csv
-*.pkl
 *.joblib
 
 # IDE
