@@ -320,7 +320,7 @@
 // ── CONFIG ──
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8000'
-  : 'https://hand2emoji-production.up.railway.app';
+  : 'https://hand2emoji.onrender.com';
 const HOLD_MS    = 900;   // ms que debe mantenerse el gesto
 const COOL_MS    = 1000;  // ms de pausa tras confirmar
 const THROTTLE   = 180;   // ms entre llamadas a la API
@@ -578,6 +578,17 @@ btnOvl.addEventListener('click',   startCam);
 
 checkAPI();
 setInterval(checkAPI, 15000);
+
+// ── INIT ──
+checkAPI();
+setInterval(checkAPI, 15000);
+
+// Mantener API despierta
+setInterval(() => {
+  fetch(`${API_URL}/health`).catch(() => {});
+}, 14 * 60 * 1000);
+
+
 </script>
 </body>
 </html>
