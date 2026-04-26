@@ -355,18 +355,28 @@ const apiText  = document.getElementById('apiText');
 
 // ── API ──
 async function checkAPI() {
-  try {
-    const r = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(3000) });
-    if (!r.ok) throw new Error();
-    apiBadge.className  = 'api-pill online';
-    apiText.textContent = 'API online';
-    await loadGestos();
-    btnStart.disabled = false;
-  } catch {
-    apiBadge.className  = 'api-pill offline';
-    apiText.textContent = 'API offline';
-    btnStart.disabled   = true;
-  }
+  // Si ya está online no hacer nada
+  if (apiBadge.classList.contains('online')) return;
+  
+  apiBadge.className  = 'api-pill loading';
+  apiText.textContent = 'Iniciando servidor...';
+
+  // Reintentar cada 5 segundos hasta que responda
+  const intentar = async () => {
+    try {
+      const r = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) throw new Error();
+      apiBadge.className  = 'api-pill online';
+      apiText.textContent = 'API online';
+      await loadGestos();
+      btnStart.disabled = false;
+    } catch {
+      // Seguir reintentando cada 5 segundos
+      setTimeout(intentar, 5000);
+    }
+  };
+
+  intentar();
 }
 
 async function loadGestos() {
