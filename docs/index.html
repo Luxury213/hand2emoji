@@ -355,23 +355,23 @@ const apiText  = document.getElementById('apiText');
 
 // ── API ──
 async function checkAPI() {
-  // Si ya está online no hacer nada
+  // Si ya está online no reintentar
   if (apiBadge.classList.contains('online')) return;
-  
+
   apiBadge.className  = 'api-pill loading';
   apiText.textContent = 'Iniciando servidor...';
 
-  // Reintentar cada 5 segundos hasta que responda
   const intentar = async () => {
     try {
       const r = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(5000) });
       if (!r.ok) throw new Error();
+      // ✅ Primero cargar gestos
+      await loadGestos();
+      // ✅ Solo después marcar como online
       apiBadge.className  = 'api-pill online';
       apiText.textContent = 'API online';
-      await loadGestos();
-      btnStart.disabled = false;
+      btnStart.disabled   = false;
     } catch {
-      // Seguir reintentando cada 5 segundos
       setTimeout(intentar, 5000);
     }
   };
