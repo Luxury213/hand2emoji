@@ -340,10 +340,12 @@ async function checkAPI() {
   try {
     const r = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(5000) });
     if (!r.ok) throw new Error();
-    await loadGestos();
+    // API respondió — marcar online inmediatamente
     apiBadge.className  = 'api-pill online';
     apiText.textContent = 'API online';
     btnStart.disabled   = false;
+    // Cargar gestos por separado — si falla no afecta el estado
+    loadGestos();
   } catch {
     apiBadge.className  = 'api-pill loading';
     apiText.textContent = 'Iniciando servidor...';
@@ -352,17 +354,20 @@ async function checkAPI() {
 }
 
 async function loadGestos() {
-  const r = await fetch(`${API_URL}/gestos`);
-  const d = await r.json();
-  chipsGrid.innerHTML = '';
-  d.gestos.forEach(g => {
-    const el = document.createElement('div');
-    el.className = 'chip'; el.id = `chip-${g.nombre}`;
-    el.innerHTML = `<span class="chip-em">${g.emoji}</span><span class="chip-nm">${g.nombre.replace(/_/g,' ')}</span>`;
-    chipsGrid.appendChild(el);
-  });
+  try {
+    const r = await fetch(`${API_URL}/gestos`);
+    const d = await r.json();
+    chipsGrid.innerHTML = '';
+    d.gestos.forEach(g => {
+      const el = document.createElement('div');
+      el.className = 'chip'; el.id = `chip-${g.nombre}`;
+      el.innerHTML = `<span class="chip-em">${g.emoji}</span><span class="chip-nm">${g.nombre.replace(/_/g,' ')}</span>`;
+      chipsGrid.appendChild(el);
+    });
+  } catch(e) {
+    console.error('Error cargando gestos:', e);
+  }
 }
-
 // ── NORMALIZACIÓN ──
 function normalize(lms, W, H) {
   const m  = { x: lms[0].x * W, y: lms[0].y * H, z: lms[0].z };
