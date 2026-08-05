@@ -15,7 +15,6 @@
       font-family: 'Inter', sans-serif;
     }
 
-    /* ── CÁMARA: ocupa TODO ── */
     #video, #canvas {
       position: fixed;
       inset: 0;
@@ -25,7 +24,6 @@
     #video  { transform: scaleX(-1); z-index: 0; }
     #canvas { z-index: 1; }
 
-    /* ── CAPA UI sobre la cámara ── */
     .ui {
       position: fixed;
       inset: 0;
@@ -33,7 +31,6 @@
       pointer-events: none;
     }
 
-    /* ── HEADER FLOTANTE ── */
     .hud-top {
       position: absolute;
       top: 0; left: 0; right: 0;
@@ -62,7 +59,6 @@
       gap: .5rem;
     }
 
-    /* Status pill */
     .status-pill {
       display: flex;
       align-items: center;
@@ -89,19 +85,14 @@
       border-color: rgba(52,211,153,.25);
       color: #34D399;
     }
-    .status-pill.offline {
-      background: rgba(248,113,113,.1);
-      border-color: rgba(248,113,113,.25);
-      color: #F87171;
-    }
     .pill-dot {
       width: 5px; height: 5px;
       border-radius: 50%;
       background: currentColor;
       flex-shrink: 0;
     }
-    .status-pill.waking  .pill-dot { animation: waking-pulse 1.1s ease-in-out infinite; }
-    .status-pill.online  .pill-dot { animation: online-blink 2.4s ease-in-out infinite; }
+    .status-pill.waking .pill-dot { animation: waking-pulse 1.1s ease-in-out infinite; }
+    .status-pill.online .pill-dot { animation: online-blink 2.4s ease-in-out infinite; }
     @keyframes waking-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.25;transform:scale(.65)} }
     @keyframes online-blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
@@ -112,7 +103,6 @@
       letter-spacing: .06em;
     }
 
-    /* ── EMOJI CENTRAL ── */
     .hud-center {
       position: absolute;
       top: 50%; left: 50%;
@@ -169,7 +159,6 @@
     }
     .gesture-name.active { color: rgba(255,255,255,.75); }
 
-    /* ── PANEL INFERIOR FLOTANTE ── */
     .hud-bottom {
       position: absolute;
       bottom: 0; left: 0; right: 0;
@@ -181,7 +170,6 @@
       gap: 1rem;
     }
 
-    /* Gestos scrollables */
     .gestures-strip {
       display: flex;
       gap: .5rem;
@@ -226,7 +214,6 @@
     }
     .chip.active .chip-nm { color: rgba(167,139,250,.9); }
 
-    /* Controles */
     .controls {
       display: flex;
       flex-direction: column;
@@ -253,20 +240,15 @@
       border-color: rgba(167,139,250,.35);
       color: rgba(255,255,255,.9);
     }
-    .btn-start:hover:not(:disabled) {
-      background: rgba(167,139,250,.28);
-    }
+    .btn-start:hover:not(:disabled) { background: rgba(167,139,250,.28); }
     .btn-stop {
       background: rgba(248,113,113,.1);
       border-color: rgba(248,113,113,.25);
       color: rgba(248,113,113,.9);
     }
-    .btn-stop:hover:not(:disabled) {
-      background: rgba(248,113,113,.2);
-    }
+    .btn-stop:hover:not(:disabled) { background: rgba(248,113,113,.2); }
     .btn:disabled { opacity: .3; cursor: not-allowed; }
 
-    /* ── HAND TAG ── */
     .hand-tag {
       position: absolute;
       top: 1.4rem; left: 50%; transform: translateX(-50%);
@@ -282,7 +264,6 @@
     }
     .hand-tag.detected { color: rgba(52,211,153,.7); }
 
-    /* ── START OVERLAY ── */
     .start-overlay {
       position: fixed;
       inset: 0; z-index: 30;
@@ -296,40 +277,23 @@
       gap: 1.1rem;
     }
     .start-overlay.hidden { display: none; }
-    .ovl-emoji {
-      font-size: 4rem;
-      animation: float 3s ease-in-out infinite;
-    }
+    .ovl-emoji { font-size: 4rem; animation: float 3s ease-in-out infinite; }
     @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-    .ovl-title {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: rgba(255,255,255,.85);
-      letter-spacing: -.01em;
-    }
-    .ovl-sub {
-      font-size: .78rem;
-      color: rgba(255,255,255,.35);
-      margin-top: -.4rem;
-    }
+    .ovl-title { font-size: 1.1rem; font-weight: 600; color: rgba(255,255,255,.85); letter-spacing: -.01em; }
+    .ovl-sub   { font-size: .78rem; color: rgba(255,255,255,.35); margin-top: -.4rem; }
     .btn-ovl {
       margin-top: .4rem;
       font-family: 'Inter', sans-serif;
-      font-size: .82rem;
-      font-weight: 600;
-      padding: .7rem 2.2rem;
-      border-radius: 10px;
+      font-size: .82rem; font-weight: 600;
+      padding: .7rem 2.2rem; border-radius: 10px;
       border: 1px solid rgba(167,139,250,.45);
       background: rgba(167,139,250,.15);
       color: rgba(255,255,255,.9);
-      cursor: pointer;
-      transition: all .2s;
-      letter-spacing: .02em;
+      cursor: pointer; transition: all .2s; letter-spacing: .02em;
     }
     .btn-ovl:hover:not(:disabled) { background: rgba(167,139,250,.28); }
     .btn-ovl:disabled { opacity: .35; cursor: not-allowed; }
 
-    /* Scan corners decorativas */
     .corner { position: fixed; width: 20px; height: 20px; z-index: 11; pointer-events: none; opacity: .35; }
     .corner.tl { top: 1rem; left: 1rem; border-top: 1.5px solid #A78BFA; border-left: 1.5px solid #A78BFA; }
     .corner.tr { top: 1rem; right: 1rem; border-top: 1.5px solid #A78BFA; border-right: 1.5px solid #A78BFA; }
@@ -348,7 +312,6 @@
 <div class="corner br"></div>
 
 <div class="ui">
-
   <div class="hud-top">
     <div class="logo">Hand<span>/</span>2<span>/</span>Emoji</div>
     <div class="hud-top-right">
@@ -380,7 +343,6 @@
       <button class="btn btn-stop"  id="btnStop"  disabled>■ Detener</button>
     </div>
   </div>
-
 </div>
 
 <div class="start-overlay" id="startOverlay">
@@ -395,19 +357,22 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
 <script>
+// ── CONFIG ──
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8000'
-  : 'https://hand2emoji-api.onrender.com'; // ← tu URL de Railway
+  : 'https://hand2emoji.onrender.com';  // ← URL correcta
 
 const HOLD_MS  = 900;
 const COOL_MS  = 1000;
 const THROTTLE = 180;
-const CIRC     = 2 * Math.PI * 54; // 339.3
+const CIRC     = 2 * Math.PI * 54;
 
+// ── ESTADO ──
 let state = 'listening', candidate = null, holdStart = null;
 let lastCall = 0, prevGesto = null;
 let frames = 0, fpsT = Date.now(), mpCam = null;
 
+// ── DOM ──
 const video       = document.getElementById('video');
 const canvas      = document.getElementById('canvas');
 const ctx         = canvas.getContext('2d');
@@ -424,39 +389,31 @@ const statusPill  = document.getElementById('statusPill');
 const statusText  = document.getElementById('statusText');
 const fpsLabel    = document.getElementById('fpsLabel');
 
+// ── RING ──
 function setRing(pct, cooldown) {
   ringArc.style.strokeDashoffset = CIRC - (pct / 100) * CIRC;
   ringArc.className = 'ring-progress' + (cooldown ? ' cooldown' : '');
 }
 
+// ── API ──
+// Lógica simple:
+// éxito  → online verde, habilita botones, carga gestos
+// fallo  → waking amarillo, deshabilita botones
+// el setInterval de 5s sigue reintentando hasta que despierte
 async function checkAPI() {
   try {
     const r = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(5000) });
-    if (!r.ok) throw 0;
-    statusPill.className = 'status-pill online';
+    if (!r.ok) throw new Error();
+    statusPill.className   = 'status-pill online';
     statusText.textContent = 'API online';
-    btnStart.disabled  = false;
-    btnOverlay.disabled = false;
+    btnStart.disabled      = false;
+    btnOverlay.disabled    = false;
     loadGestos();
   } catch {
-    statusPill.className = 'status-pill waking';
+    statusPill.className   = 'status-pill waking';
     statusText.textContent = 'Despertando servidor';
-    btnStart.disabled  = true;
-    async function checkAPI() {
-  // habilita la cámara SIEMPRE, sin esperar la API
-  btnStart.disabled   = false;
-  btnOverlay.disabled = false;
-
-  try {
-    const r = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(5000) });
-    if (!r.ok) throw 0;
-    statusPill.className = 'status-pill online';
-    statusText.textContent = 'API online';
-  } catch {
-    statusPill.className = 'status-pill waking';
-    statusText.textContent = 'Despertando servidor';
-  }
-}
+    btnStart.disabled      = true;
+    btnOverlay.disabled    = true;
   }
 }
 
@@ -472,9 +429,10 @@ async function loadGestos() {
       el.innerHTML = `<span class="chip-em">${g.emoji}</span><span class="chip-nm">${g.nombre.replace(/_/g,' ')}</span>`;
       chipsGrid.appendChild(el);
     });
-  } catch(e) { console.warn('Gestos:', e); }
+  } catch(e) { console.warn('Error cargando gestos:', e); }
 }
 
+// ── NORMALIZACIÓN ──
 function normalize(lms, W, H) {
   const mx = lms[0].x * W, my = lms[0].y * H, mz = lms[0].z;
   const r9x = lms[9].x * W, r9y = lms[9].y * H, r9z = lms[9].z;
@@ -488,6 +446,7 @@ function normalize(lms, W, H) {
   return [...xs, ...ys, ...zs];
 }
 
+// ── PREDICCIÓN ──
 async function predict(lms, lado, W, H) {
   try {
     const r = await fetch(`${API_URL}/predict`, {
@@ -500,17 +459,18 @@ async function predict(lms, lado, W, H) {
   } catch { return null; }
 }
 
+// ── CONFIRMAR GESTO ──
 function confirmar(res) {
-  const { gesto, emoji, confianza } = res;
+  const { gesto, emoji } = res;
   if (gesto !== prevGesto) {
     emojiMain.classList.remove('pop');
     void emojiMain.offsetWidth;
     emojiMain.classList.add('pop');
     prevGesto = gesto;
   }
-  emojiMain.textContent  = emoji;
+  emojiMain.textContent   = emoji;
   gestureName.textContent = gesto.replace(/_/g, ' ');
-  gestureName.className  = 'gesture-name active';
+  gestureName.className   = 'gesture-name active';
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   document.getElementById(`chip-${gesto}`)?.classList.add('active');
 
@@ -523,21 +483,22 @@ function confirmar(res) {
 }
 
 function resetDisplay() {
-  emojiMain.textContent  = '🤚';
+  emojiMain.textContent   = '🤚';
   gestureName.textContent = 'muestra tu mano';
-  gestureName.className  = 'gesture-name';
+  gestureName.className   = 'gesture-name';
   setRing(0, false);
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   prevGesto = null;
 }
 
+// ── MEDIAPIPE ──
 const hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
 hands.setOptions({ maxNumHands:1, modelComplexity:1, minDetectionConfidence:.75, minTrackingConfidence:.6 });
 
 hands.onResults(async results => {
   const W = video.videoWidth || 640, H = video.videoHeight || 480;
   canvas.width = W; canvas.height = H;
-  ctx.clearRect(0,0,W,H);
+  ctx.clearRect(0, 0, W, H);
 
   frames++;
   const now = Date.now();
@@ -580,6 +541,7 @@ hands.onResults(async results => {
   }
 });
 
+// ── CÁMARA ──
 async function startCam() {
   btnStart.disabled = true;
   btnStart.textContent = '⏳ Iniciando...';
@@ -602,8 +564,8 @@ async function startCam() {
 
 function stopCam() {
   if (mpCam) { mpCam.stop(); mpCam = null; }
-  btnStart.disabled = false; btnStart.textContent = '▶ Iniciar';
-  btnStop.disabled  = true;
+  btnStart.disabled    = false; btnStart.textContent = '▶ Iniciar';
+  btnStop.disabled     = true;
   startOvl.classList.remove('hidden');
   state = 'listening'; candidate = null; holdStart = null;
   resetDisplay();
@@ -613,9 +575,10 @@ btnStart.addEventListener('click',   startCam);
 btnStop.addEventListener('click',    stopCam);
 btnOverlay.addEventListener('click', startCam);
 
+// ── INIT ──
 checkAPI();
-setInterval(checkAPI, 5000);
-setInterval(() => fetch(`${API_URL}/health`).catch(()=>{}), 14*60*1000);
+setInterval(checkAPI, 5000);                                          // reintenta cada 5s
+setInterval(() => fetch(`${API_URL}/health`).catch(()=>{}), 14*60*1000); // keep-alive
 </script>
 </body>
 </html>
