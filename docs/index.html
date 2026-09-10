@@ -2,480 +2,1080 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hand2Emoji</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Hand2Emoji — Inferencia de Gestos en Tiempo Real</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #050507;
+      --surface: rgba(255, 255, 255, 0.04);
+      --surface-hover: rgba(255, 255, 255, 0.08);
+      --surface-active: rgba(255, 255, 255, 0.12);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(255, 255, 255, 0.22);
+      --text-main: rgba(255, 255, 255, 0.94);
+      --text-dim: rgba(255, 255, 255, 0.45);
+      --text-faint: rgba(255, 255, 255, 0.25);
+      --accent: #FFFFFF;
+      --success: #34D399;
+      --warning: #FBBF24;
+      --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+    }
 
     html, body {
       width: 100%; height: 100%;
       overflow: hidden;
-      background: #000;
-      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      user-select: none;
     }
 
+    /* ── VIDEO Y CANVAS ── */
     #video, #canvas {
       position: fixed;
       inset: 0;
       width: 100%; height: 100%;
       object-fit: cover;
     }
-    #video  { transform: scaleX(-1); z-index: 0; }
+    #video  { transform: scaleX(-1); z-index: 0; filter: contrast(104%) brightness(96%); }
     #canvas { z-index: 1; }
 
+    /* Viñeta sutil para legibilidad de interfaz */
+    .vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      background: radial-gradient(circle at center, transparent 35%, rgba(0, 0, 0, 0.6) 100%);
+    }
+
+    /* ── CONTENEDOR UI ── */
     .ui {
       position: fixed;
       inset: 0;
       z-index: 10;
       pointer-events: none;
-    }
-
-    .hud-top {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      padding: 1.25rem 1.5rem;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      background: linear-gradient(to bottom, rgba(0,0,0,.55) 0%, transparent 100%);
-    }
-
-    .logo {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: .75rem;
-      font-weight: 500;
-      color: rgba(255,255,255,.9);
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      line-height: 1;
-    }
-    .logo span { color: rgba(167,139,250,.9); }
-
-    .hud-top-right {
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
+      justify-content: space-between;
+      padding: env(safe-area-inset-top, 1.25rem) env(safe-area-inset-right, 1.5rem) env(safe-area-inset-bottom, 1.5rem) env(safe-area-inset-left, 1.5rem);
+    }
+
+    /* ── HEADER SUPERIOR ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: all;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+    }
+    .brand-mark {
+      width: 26px; height: 26px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .85rem;
+      backdrop-filter: blur(12px);
+    }
+    .brand-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .74rem;
+      font-weight: 500;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-main);
+    }
+    .brand-text span {
+      color: var(--text-dim);
+      font-weight: 400;
+    }
+
+    .top-tools {
+      display: flex;
+      align-items: center;
       gap: .5rem;
     }
 
-    .status-pill {
-      display: flex;
+    .status-badge {
+      display: inline-flex;
       align-items: center;
       gap: .45rem;
-      padding: .3rem .8rem;
-      border-radius: 999px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid transparent;
+      padding: .28rem .65rem;
+      border-radius: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       font-family: 'JetBrains Mono', monospace;
-      font-size: .6rem;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      pointer-events: all;
-      transition: background .4s, border-color .4s, color .4s;
+      font-size: .62rem;
+      letter-spacing: .04em;
+      color: var(--text-dim);
+      transition: all .3s var(--ease-spring);
     }
-    .status-pill.waking {
-      background: rgba(251,191,36,.12);
-      border-color: rgba(251,191,36,.3);
-      color: #FBBF24;
+    .status-badge.online {
+      color: var(--text-main);
+      border-color: rgba(52, 211, 153, 0.3);
     }
-    .status-pill.online {
-      background: rgba(52,211,153,.1);
-      border-color: rgba(52,211,153,.25);
-      color: #34D399;
+    .status-badge.waking {
+      color: var(--warning);
+      border-color: rgba(251, 191, 36, 0.3);
     }
-    .pill-dot {
+    .badge-dot {
       width: 5px; height: 5px;
       border-radius: 50%;
       background: currentColor;
-      flex-shrink: 0;
     }
-    .status-pill.waking .pill-dot { animation: waking-pulse 1.1s ease-in-out infinite; }
-    .status-pill.online .pill-dot { animation: online-blink 2.4s ease-in-out infinite; }
-    @keyframes waking-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.25;transform:scale(.65)} }
-    @keyframes online-blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .status-badge.online .badge-dot {
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+    }
+    .status-badge.waking .badge-dot {
+      animation: pulse-dot 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.2} }
 
-    .fps-label {
+    .tool-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: .32rem .6rem;
+      border-radius: 6px;
       font-family: 'JetBrains Mono', monospace;
-      font-size: .58rem;
-      color: rgba(255,255,255,.25);
-      letter-spacing: .06em;
+      font-size: .65rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      backdrop-filter: blur(16px);
+      transition: all .2s;
+    }
+    .tool-btn:hover {
+      background: var(--surface-hover);
+      color: var(--text-main);
+      border-color: var(--border-focus);
+    }
+    .tool-btn.active {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.3);
     }
 
-    .hud-center {
+    /* ── EMOJI COMPOSER (BANDEJA SUPERIOR) ── */
+    .composer-wrap {
       position: absolute;
-      top: 50%; left: 50%;
+      top: 4.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(92%, 520px);
+      pointer-events: all;
+    }
+
+    .composer-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .5rem;
+      padding: .4rem .5rem .4rem .9rem;
+      border-radius: 12px;
+      background: rgba(10, 10, 14, 0.72);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(24px) saturate(150%);
+      -webkit-backdrop-filter: blur(24px) saturate(150%);
+      box-shadow: 0 16px 36px -8px rgba(0,0,0,0.55);
+      transition: border-color .2s;
+    }
+    .composer-bar:hover {
+      border-color: var(--border-focus);
+    }
+
+    .composer-output {
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      font-size: 1.35rem;
+      min-height: 34px;
+      flex: 1;
+      white-space: nowrap;
+    }
+    .composer-output::-webkit-scrollbar { display: none; }
+
+    .composer-placeholder {
+      font-size: .74rem;
+      color: var(--text-faint);
+      letter-spacing: .02em;
+    }
+
+    .composer-item {
+      display: inline-block;
+      animation: char-pop .2s var(--ease-spring);
+    }
+    @keyframes char-pop {
+      0% { transform: scale(0.4) translateY(4px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .composer-actions {
+      display: flex;
+      align-items: center;
+      gap: .25rem;
+    }
+
+    .btn-action {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-dim);
+      padding: .35rem .55rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      transition: all .15s;
+    }
+    .btn-action:hover {
+      background: var(--surface-hover);
+      color: var(--text-main);
+      border-color: var(--border);
+    }
+    .btn-action.primary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: var(--border);
+    }
+    .btn-action.primary:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    /* ── RETÍCULA Y DISPLAY CENTRAL ── */
+    .center-stage {
+      position: absolute;
+      top: 52%;
+      left: 50%;
       transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: .6rem;
+      gap: .75rem;
       pointer-events: none;
     }
 
-    .ring-wrap {
+    .ring-box {
       position: relative;
-      width: 130px; height: 130px;
-      display: flex; align-items: center; justify-content: center;
+      width: 140px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+
     .ring-svg {
       position: absolute;
-      inset: 0; width: 100%; height: 100%;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       transform: rotate(-90deg);
     }
-    .ring-track {
+
+    .ring-bg {
       fill: none;
-      stroke: rgba(255,255,255,.08);
-      stroke-width: 2.5;
+      stroke: rgba(255, 255, 255, 0.06);
+      stroke-width: 2;
     }
-    .ring-progress {
+
+    .ring-fill {
       fill: none;
-      stroke: rgba(167,139,250,.85);
-      stroke-width: 2.5;
+      stroke: #FFFFFF;
+      stroke-width: 2.2;
       stroke-linecap: round;
       stroke-dasharray: 339.3;
       stroke-dashoffset: 339.3;
-      transition: stroke-dashoffset .08s linear, stroke .3s;
+      transition: stroke-dashoffset .06s linear, stroke .2s;
     }
-    .ring-progress.cooldown { stroke: rgba(251,191,36,.8); }
+    .ring-fill.cooldown {
+      stroke: var(--warning);
+    }
 
-    .emoji-big {
-      font-size: 4.5rem;
+    .emoji-target {
+      font-size: 4.6rem;
       line-height: 1;
-      filter: drop-shadow(0 2px 24px rgba(0,0,0,.6));
-      transition: transform .15s;
+      filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.7));
+      transition: transform .2s var(--ease-spring);
     }
-    .emoji-big.pop { animation: em-pop .28s cubic-bezier(.34,1.56,.64,1); }
-    @keyframes em-pop { 0%{transform:scale(.4) rotate(-10deg)} 100%{transform:scale(1) rotate(0)} }
-
-    .gesture-name {
-      font-size: .7rem;
-      font-weight: 500;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,.4);
-      text-shadow: 0 1px 8px rgba(0,0,0,.8);
+    .emoji-target.pop {
+      animation: emoji-pulse .3s var(--ease-spring);
     }
-    .gesture-name.active { color: rgba(255,255,255,.75); }
-
-    .hud-bottom {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      padding: 1.5rem;
-      background: linear-gradient(to top, rgba(0,0,0,.7) 0%, transparent 100%);
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 1rem;
+    @keyframes emoji-pulse {
+      0% { transform: scale(0.6); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
     }
 
-    .gestures-strip {
-      display: flex;
-      gap: .5rem;
-      overflow-x: auto;
-      scrollbar-width: none;
-      flex: 1;
-      padding-bottom: 2px;
-      pointer-events: all;
-    }
-    .gestures-strip::-webkit-scrollbar { display: none; }
-
-    .chip {
-      flex-shrink: 0;
+    .stage-meta {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: .2rem;
-      padding: .5rem .45rem;
-      border-radius: 10px;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.08);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      transition: all .2s;
-      min-width: 52px;
-      cursor: default;
     }
-    .chip.active {
-      background: rgba(167,139,250,.18);
-      border-color: rgba(167,139,250,.45);
-      transform: translateY(-3px);
-    }
-    .chip-em { font-size: 1.25rem; line-height: 1; }
-    .chip-nm {
-      font-size: .32rem;
+
+    .gesture-caption {
       font-family: 'JetBrains Mono', monospace;
-      color: rgba(255,255,255,.35);
-      text-align: center;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-      line-height: 1.3;
-    }
-    .chip.active .chip-nm { color: rgba(167,139,250,.9); }
-
-    .controls {
-      display: flex;
-      flex-direction: column;
-      gap: .45rem;
-      flex-shrink: 0;
-      pointer-events: all;
-    }
-    .btn {
-      font-family: 'Inter', sans-serif;
       font-size: .72rem;
-      font-weight: 600;
-      padding: .55rem 1.1rem;
-      border-radius: 8px;
-      border: 1px solid transparent;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all .2s;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      letter-spacing: .02em;
+      font-weight: 500;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-shadow: 0 1px 8px rgba(0,0,0,0.8);
+      transition: color .2s;
     }
-    .btn-start {
-      background: rgba(167,139,250,.15);
-      border-color: rgba(167,139,250,.35);
-      color: rgba(255,255,255,.9);
+    .gesture-caption.active {
+      color: #FFFFFF;
     }
-    .btn-start:hover:not(:disabled) { background: rgba(167,139,250,.28); }
-    .btn-stop {
-      background: rgba(248,113,113,.1);
-      border-color: rgba(248,113,113,.25);
-      color: rgba(248,113,113,.9);
-    }
-    .btn-stop:hover:not(:disabled) { background: rgba(248,113,113,.2); }
-    .btn:disabled { opacity: .3; cursor: not-allowed; }
 
-    .hand-tag {
-      position: absolute;
-      top: 1.4rem; left: 50%; transform: translateX(-50%);
+    .confidence-meter {
       font-family: 'JetBrains Mono', monospace;
       font-size: .58rem;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,.22);
-      text-shadow: 0 1px 6px rgba(0,0,0,.9);
-      transition: color .3s;
-      white-space: nowrap;
-      pointer-events: none;
+      color: var(--text-faint);
+      letter-spacing: .06em;
     }
-    .hand-tag.detected { color: rgba(52,211,153,.7); }
 
-    .start-overlay {
+    /* ── PANEL INFERIOR Y PREFERENCIAS ── */
+    .bottom-bar {
+      display: flex;
+      flex-direction: column;
+      gap: .8rem;
+      pointer-events: all;
+    }
+
+    .controls-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .config-group {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      background: rgba(10, 10, 14, 0.6);
+      border: 1px solid var(--border);
+      padding: .25rem .35rem;
+      border-radius: 8px;
+      backdrop-filter: blur(16px);
+    }
+
+    .config-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .56rem;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      padding: 0 .4rem;
+      letter-spacing: .08em;
+    }
+
+    .segmented {
+      display: flex;
+      align-items: center;
+      gap: .15rem;
+    }
+    .seg-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .62rem;
+      padding: .22rem .55rem;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .seg-btn:hover {
+      color: var(--text-main);
+    }
+    .seg-btn.active {
+      background: rgba(255, 255, 255, 0.12);
+      color: #FFFFFF;
+      font-weight: 600;
+    }
+
+    .btn-cam-main {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: .78rem;
+      font-weight: 600;
+      letter-spacing: .02em;
+      padding: .5rem 1.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      color: #000000;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      transition: all .2s;
+    }
+    .btn-cam-main:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.88);
+      transform: translateY(-1px);
+    }
+    .btn-cam-main.stop {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #F87171;
+    }
+    .btn-cam-main.stop:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+    .btn-cam-main:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+    }
+
+    /* ── TIRA DE GESTOS ── */
+    .catalog-drawer {
+      display: flex;
+      gap: .45rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: .2rem 0;
+    }
+    .catalog-drawer::-webkit-scrollbar { display: none; }
+
+    .gesture-chip {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .15rem;
+      padding: .45rem .5rem;
+      border-radius: 8px;
+      background: rgba(10, 10, 14, 0.55);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      min-width: 50px;
+      transition: all .2s var(--ease-spring);
+    }
+    .gesture-chip.active {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.35);
+      transform: translateY(-2px);
+    }
+    .chip-symbol { font-size: 1.15rem; line-height: 1; }
+    .chip-tag {
+      font-size: .42rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      white-space: nowrap;
+    }
+    .gesture-chip.active .chip-tag {
+      color: #FFFFFF;
+    }
+
+    /* ── OVERLAY DE INICIO MINIMALISTA ── */
+    .start-screen {
       position: fixed;
-      inset: 0; z-index: 30;
-      background: rgba(0,0,0,.75);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      inset: 0;
+      z-index: 30;
+      background: rgba(5, 5, 7, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 1.1rem;
+      gap: 1.25rem;
+      text-align: center;
+      padding: 1.5rem;
+      transition: opacity .3s, visibility .3s;
     }
-    .start-overlay.hidden { display: none; }
-    .ovl-emoji { font-size: 4rem; animation: float 3s ease-in-out infinite; }
-    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-    .ovl-title { font-size: 1.1rem; font-weight: 600; color: rgba(255,255,255,.85); letter-spacing: -.01em; }
-    .ovl-sub   { font-size: .78rem; color: rgba(255,255,255,.35); margin-top: -.4rem; }
-    .btn-ovl {
-      margin-top: .4rem;
-      font-family: 'Inter', sans-serif;
-      font-size: .82rem; font-weight: 600;
-      padding: .7rem 2.2rem; border-radius: 10px;
-      border: 1px solid rgba(167,139,250,.45);
-      background: rgba(167,139,250,.15);
-      color: rgba(255,255,255,.9);
-      cursor: pointer; transition: all .2s; letter-spacing: .02em;
+    .start-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
     }
-    .btn-ovl:hover:not(:disabled) { background: rgba(167,139,250,.28); }
-    .btn-ovl:disabled { opacity: .35; cursor: not-allowed; }
+    .hero-icon {
+      font-size: 3.2rem;
+      display: inline-block;
+      margin-bottom: -.25rem;
+    }
+    .hero-heading {
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: -.02em;
+      color: var(--text-main);
+    }
+    .hero-desc {
+      font-size: .84rem;
+      color: var(--text-dim);
+      max-width: 380px;
+      line-height: 1.45;
+    }
+    .btn-launch {
+      margin-top: .5rem;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: .82rem;
+      font-weight: 600;
+      padding: .68rem 1.9rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: #FFFFFF;
+      color: #000000;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-launch:hover:not(:disabled) {
+      background: rgba(255,255,255,0.85);
+      transform: scale(1.02);
+    }
+    .btn-launch:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+    }
 
-    .corner { position: fixed; width: 20px; height: 20px; z-index: 11; pointer-events: none; opacity: .35; }
-    .corner.tl { top: 1rem; left: 1rem; border-top: 1.5px solid #A78BFA; border-left: 1.5px solid #A78BFA; }
-    .corner.tr { top: 1rem; right: 1rem; border-top: 1.5px solid #A78BFA; border-right: 1.5px solid #A78BFA; }
-    .corner.bl { bottom: 1rem; left: 1rem; border-bottom: 1.5px solid #A78BFA; border-left: 1.5px solid #A78BFA; }
-    .corner.br { bottom: 1rem; right: 1rem; border-bottom: 1.5px solid #A78BFA; border-right: 1.5px solid #A78BFA; }
+    /* ── TOAST NOTIFICATION MINIMALISTA ── */
+    .toast {
+      position: fixed;
+      bottom: 6.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: rgba(20, 20, 24, 0.9);
+      border: 1px solid var(--border-focus);
+      color: #FFFFFF;
+      padding: .4rem .9rem;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem;
+      letter-spacing: .02em;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+      backdrop-filter: blur(16px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all .22s var(--ease-spring);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
   </style>
 </head>
 <body>
 
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
+<div class="vignette"></div>
 
-<div class="corner tl"></div>
-<div class="corner tr"></div>
-<div class="corner bl"></div>
-<div class="corner br"></div>
+<!-- TOAST FLOTANTE -->
+<div class="toast" id="toast">
+  <span style="color: var(--success);">✓</span>
+  <span id="toastMsg">Copiado al portapapeles</span>
+</div>
 
+<!-- CAPA DE INTERFAZ -->
 <div class="ui">
-  <div class="hud-top">
-    <div class="logo">Hand<span>/</span>2<span>/</span>Emoji</div>
-    <div class="hud-top-right">
-      <div class="status-pill waking" id="statusPill">
-        <div class="pill-dot"></div>
-        <span id="statusText">Despertando servidor</span>
+  <!-- ENCABEZADO -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-mark">✦</div>
+      <div class="brand-text">Hand2Emoji <span>/ Edge AI</span></div>
+    </div>
+    <div class="top-tools">
+      <div class="status-badge waking" id="statusBadge">
+        <div class="badge-dot"></div>
+        <span id="statusText">Iniciando IA...</span>
       </div>
-      <div class="fps-label" id="fpsLabel">-- fps</div>
+      <button class="tool-btn active" id="btnAudio" title="Feedback Sonoro">🔊 Audio</button>
+      <button class="tool-btn" id="btnAutoCopy" title="Copiar automáticamente al detectar">⚡ Auto-copy</button>
+      <button class="tool-btn" id="btnFullscreen" title="Pantalla Completa">⛶</button>
+    </div>
+  </header>
+
+  <!-- BANDEJA SUPERIOR DE COMPOSICIÓN (EMOJI COMPOSER) -->
+  <div class="composer-wrap">
+    <div class="composer-bar">
+      <div class="composer-output" id="composerOutput">
+        <span class="composer-placeholder" id="composerPlaceholder">Haz un gesto para componer...</span>
+      </div>
+      <div class="composer-actions">
+        <button class="btn-action primary" id="btnCopyBuffer" title="Copiar cadena de emojis">
+          <span>📋</span> Copiar
+        </button>
+        <button class="btn-action" id="btnBackBuffer" title="Borrar último">⌫</button>
+        <button class="btn-action" id="btnClearBuffer" title="Limpiar">✕</button>
+      </div>
     </div>
   </div>
 
-  <div class="hand-tag" id="handTag">Sin mano detectada</div>
-
-  <div class="hud-center">
-    <div class="ring-wrap">
+  <!-- RETÍCULA Y EMOJI CENTRAL -->
+  <div class="center-stage">
+    <div class="ring-box">
       <svg class="ring-svg" viewBox="0 0 120 120">
-        <circle class="ring-track"    cx="60" cy="60" r="54"/>
-        <circle class="ring-progress" id="ringArc" cx="60" cy="60" r="54"/>
+        <circle class="ring-bg" cx="60" cy="60" r="54" />
+        <circle class="ring-fill" id="ringProgress" cx="60" cy="60" r="54" />
       </svg>
-      <span class="emoji-big" id="emojiMain">🤚</span>
+      <span class="emoji-target" id="emojiCenter">🤚</span>
     </div>
-    <div class="gesture-name" id="gestureName">muestra tu mano</div>
-  </div>
-
-  <div class="hud-bottom">
-    <div class="gestures-strip" id="chipsGrid"></div>
-    <div class="controls">
-      <button class="btn btn-start" id="btnStart" disabled>▶ Iniciar</button>
-      <button class="btn btn-stop"  id="btnStop"  disabled>■ Detener</button>
+    <div class="stage-meta">
+      <span class="gesture-caption" id="gestureCaption">Muestra tu mano</span>
+      <span class="confidence-meter" id="fpsDisplay">-- fps · 63 landmarks</span>
     </div>
   </div>
+
+  <!-- BARRA INFERIOR -->
+  <footer class="bottom-bar">
+    <div class="controls-strip">
+      <!-- SELECTOR DE SENSIBILIDAD -->
+      <div class="config-group">
+        <span class="config-label">Velocidad</span>
+        <div class="segmented">
+          <button class="seg-btn" data-ms="550">0.5s</button>
+          <button class="seg-btn active" data-ms="850">0.8s</button>
+          <button class="seg-btn" data-ms="1300">1.3s</button>
+        </div>
+      </div>
+
+      <!-- BOTONES DE CÁMARA -->
+      <div style="display: flex; gap: .5rem;">
+        <button class="btn-cam-main" id="btnStart" disabled>▶ Activar Cámara</button>
+        <button class="btn-cam-main stop" id="btnStop" disabled style="display: none;">■ Detener</button>
+      </div>
+    </div>
+
+    <!-- TIRA DE GESTOS RECONOCIDOS -->
+    <div class="catalog-drawer" id="catalogDrawer"></div>
+  </footer>
 </div>
 
-<div class="start-overlay" id="startOverlay">
-  <div class="ovl-emoji">🖐️</div>
-  <div class="ovl-title">Hand2Emoji</div>
-  <div class="ovl-sub">Detección de gestos en tiempo real</div>
-  <button class="btn-ovl" id="btnOverlay" disabled>▶ Activar cámara</button>
+<!-- PANTALLA DE INICIO ELEGANTE -->
+<div class="start-screen" id="startScreen">
+  <span class="hero-icon">🖐️</span>
+  <h1 class="hero-heading">Reconocimiento Gestual en Tiempo Real</h1>
+  <p class="hero-desc">Convierte tus gestos de mano en emojis al instante con inferencia on-device a 60 FPS sin enviar video a ningún servidor.</p>
+  <button class="btn-launch" id="btnLaunch" disabled>▶ Activar Cámara</button>
 </div>
 
+<!-- DEPENDENCIAS CLIENTE -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.1/dist/ort.min.js"></script>
 
 <script>
-// ── CONFIG ──
+// ── CONFIGURACIÓN BASE ──
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8000'
-  : 'https://hand2emoji.onrender.com';  // ← URL correcta
+  : 'https://hand2emoji.onrender.com';
 
-const HOLD_MS  = 900;
-const COOL_MS  = 1000;
-const THROTTLE = 180;
-const CIRC     = 2 * Math.PI * 54;
+let HOLD_MS          = 850;
+const COOL_MS          = 1000;
+const THROTTLE         = 40;   // 25-30 inferencias/segundo
+const CONFIANZA_MINIMA = 0.65;
+const CIRC             = 2 * Math.PI * 54;
 
-// ── ESTADO ──
+const DEFAULT_GESTOS = [
+  { nombre: 'corazon', emoji: '🫶' },
+  { nombre: 'dedos_cruzados', emoji: '🤞' },
+  { nombre: 'fuck_you', emoji: '🖕' },
+  { nombre: 'indice_abajo', emoji: '👇' },
+  { nombre: 'indice_arriba', emoji: '👆' },
+  { nombre: 'indice_derecha', emoji: '👉' },
+  { nombre: 'indice_izquierda', emoji: '👈' },
+  { nombre: 'italiano', emoji: '🤌' },
+  { nombre: 'llamame', emoji: '🤙' },
+  { nombre: 'mano_abierta', emoji: '✋' },
+  { nombre: 'ok', emoji: '👌' },
+  { nombre: 'paz', emoji: '✌️' },
+  { nombre: 'pinza', emoji: '🤏' },
+  { nombre: 'pulgar', emoji: '👍' },
+  { nombre: 'puno', emoji: '✊' },
+  { nombre: 'rock', emoji: '🤘' },
+  { nombre: 'te_apunto', emoji: '🫵' }
+];
+
+// ── ESTADOS GLOBALES ──
+let onnxSession   = null;
+let modelLabels   = DEFAULT_GESTOS.map(g => g.nombre);
+let modelEmojiMap = Object.fromEntries(DEFAULT_GESTOS.map(g => [g.nombre, g.emoji]));
+let useLocalEngine = false;
+
 let state = 'listening', candidate = null, holdStart = null;
 let lastCall = 0, prevGesto = null;
 let frames = 0, fpsT = Date.now(), mpCam = null;
 
-// ── DOM ──
-const video       = document.getElementById('video');
-const canvas      = document.getElementById('canvas');
-const ctx         = canvas.getContext('2d');
-const emojiMain   = document.getElementById('emojiMain');
-const gestureName = document.getElementById('gestureName');
-const ringArc     = document.getElementById('ringArc');
-const handTag     = document.getElementById('handTag');
-const chipsGrid   = document.getElementById('chipsGrid');
-const btnStart    = document.getElementById('btnStart');
-const btnStop     = document.getElementById('btnStop');
-const btnOverlay  = document.getElementById('btnOverlay');
-const startOvl    = document.getElementById('startOverlay');
-const statusPill  = document.getElementById('statusPill');
-const statusText  = document.getElementById('statusText');
-const fpsLabel    = document.getElementById('fpsLabel');
+// Preferencias
+let soundActive = true;
+let autoCopyActive = false;
+let emojiBuffer = [];
 
-// ── RING ──
-function setRing(pct, cooldown) {
-  ringArc.style.strokeDashoffset = CIRC - (pct / 100) * CIRC;
-  ringArc.className = 'ring-progress' + (cooldown ? ' cooldown' : '');
+// ── DOM ELEMENTS ──
+const video          = document.getElementById('video');
+const canvas         = document.getElementById('canvas');
+const ctx            = canvas.getContext('2d');
+const emojiCenter    = document.getElementById('emojiCenter');
+const gestureCaption = document.getElementById('gestureCaption');
+const fpsDisplay     = document.getElementById('fpsDisplay');
+const ringProgress   = document.getElementById('ringProgress');
+const catalogDrawer  = document.getElementById('catalogDrawer');
+const composerOutput = document.getElementById('composerOutput');
+const composerHold   = document.getElementById('composerPlaceholder');
+
+const statusBadge    = document.getElementById('statusBadge');
+const statusText     = document.getElementById('statusText');
+const btnStart       = document.getElementById('btnStart');
+const btnStop        = document.getElementById('btnStop');
+const btnLaunch      = document.getElementById('btnLaunch');
+const startScreen    = document.getElementById('startScreen');
+const toast          = document.getElementById('toast');
+const toastMsg       = document.getElementById('toastMsg');
+
+const btnAudio       = document.getElementById('btnAudio');
+const btnAutoCopy    = document.getElementById('btnAutoCopy');
+const btnFullscreen  = document.getElementById('btnFullscreen');
+const btnCopyBuffer  = document.getElementById('btnCopyBuffer');
+const btnBackBuffer  = document.getElementById('btnBackBuffer');
+const btnClearBuffer = document.getElementById('btnClearBuffer');
+
+// ── SÍNTESIS ACÚSTICA (WEB AUDIO API HÁPTICA) ──
+let audioCtx = null;
+
+function playAcousticPop() {
+  if (!soundActive) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const filter = audioCtx.createBiquadFilter();
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1600, t);
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(540, t);
+    osc.frequency.exponentialRampToValueAtTime(270, t + 0.08);
+
+    gain.gain.setValueAtTime(0.25, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.085);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.085);
+  } catch(e) {}
 }
 
-// ── API ──
-// Lógica simple:
-// éxito  → online verde, habilita botones, carga gestos
-// fallo  → waking amarillo, deshabilita botones
-// el setInterval de 5s sigue reintentando hasta que despierte
-async function checkAPI() {
+function playSubtleClick() {
+  if (!soundActive) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(900, t);
+    gain.gain.setValueAtTime(0.08, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.025);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.025);
+  } catch(e) {}
+}
+
+// ── TOAST NOTIFICATION ──
+let toastTimer = null;
+function showToast(msg) {
+  toastMsg.textContent = msg;
+  toast.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('visible'), 2000);
+}
+
+// ── COMPOSER (BUFFER DE EMOJIS) ──
+function renderComposer() {
+  if (emojiBuffer.length === 0) {
+    composerOutput.innerHTML = '';
+    composerOutput.appendChild(composerHold);
+    return;
+  }
+  composerOutput.innerHTML = '';
+  emojiBuffer.forEach(em => {
+    const span = document.createElement('span');
+    span.className = 'composer-item';
+    span.textContent = em;
+    composerOutput.appendChild(span);
+  });
+  composerOutput.scrollLeft = composerOutput.scrollWidth;
+}
+
+function appendToComposer(emoji) {
+  emojiBuffer.push(emoji);
+  renderComposer();
+  if (autoCopyActive) {
+    navigator.clipboard.writeText(emojiBuffer.join(' '));
+    showToast(`Copiado: ${emoji}`);
+  }
+}
+
+btnCopyBuffer.addEventListener('click', () => {
+  if (emojiBuffer.length === 0) return;
+  navigator.clipboard.writeText(emojiBuffer.join(' '));
+  playSubtleClick();
+  showToast('Cadena copiada al portapapeles');
+});
+
+btnBackBuffer.addEventListener('click', () => {
+  if (emojiBuffer.length > 0) {
+    emojiBuffer.pop();
+    playSubtleClick();
+    renderComposer();
+  }
+});
+
+btnClearBuffer.addEventListener('click', () => {
+  if (emojiBuffer.length > 0) {
+    emojiBuffer = [];
+    playSubtleClick();
+    renderComposer();
+  }
+});
+
+// ── CONTROLES Y PREFERENCIAS ──
+btnAudio.addEventListener('click', () => {
+  soundActive = !soundActive;
+  btnAudio.classList.toggle('active', soundActive);
+  btnAudio.textContent = soundActive ? '🔊 Audio' : '🔇 Silencio';
+  playSubtleClick();
+});
+
+btnAutoCopy.addEventListener('click', () => {
+  autoCopyActive = !autoCopyActive;
+  btnAutoCopy.classList.toggle('active', autoCopyActive);
+  showToast(autoCopyActive ? 'Auto-copiado activado' : 'Auto-copiado desactivado');
+  playSubtleClick();
+});
+
+btnFullscreen.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+});
+
+// Selector de velocidad
+document.querySelectorAll('.seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    HOLD_MS = parseInt(btn.dataset.ms, 10);
+    playSubtleClick();
+    showToast(`Sensibilidad: ${btn.textContent}`);
+  });
+});
+
+// ── CATALOGO DE GESTOS ──
+function renderChips(gestos) {
+  catalogDrawer.innerHTML = '';
+  gestos.forEach(g => {
+    const el = document.createElement('div');
+    el.className = 'gesture-chip';
+    el.id = `chip-${g.nombre}`;
+    el.innerHTML = `
+      <span class="chip-symbol">${g.emoji}</span>
+      <span class="chip-tag">${g.nombre.replace(/_/g, ' ')}</span>
+    `;
+    catalogDrawer.appendChild(el);
+  });
+}
+
+// ── ANILLO DE CONFIRMACIÓN ──
+function setRing(pct, cooldown) {
+  ringProgress.style.strokeDashoffset = CIRC - (pct / 100) * CIRC;
+  ringProgress.className = 'ring-fill' + (cooldown ? ' cooldown' : '');
+}
+
+// ── INICIALIZACIÓN DEL MOTOR LOCAL ONNX ──
+async function initLocalEngine() {
+  renderChips(DEFAULT_GESTOS);
+  statusBadge.className = 'status-badge waking';
+  statusText.textContent = 'Iniciando IA...';
+
+  try {
+    try {
+      const rMeta = await fetch('models/labels.json');
+      if (rMeta.ok) {
+        const meta = await rMeta.json();
+        modelLabels = meta.classes;
+        modelEmojiMap = meta.emoji_map;
+        renderChips(modelLabels.map(n => ({ nombre: n, emoji: modelEmojiMap[n] || '🫱' })));
+      }
+    } catch (e) {}
+
+    ort.env.wasm.numThreads = 1;
+    onnxSession = await ort.InferenceSession.create('models/modelo.onnx', {
+      executionProviders: ['wasm']
+    });
+
+    useLocalEngine = true;
+    statusBadge.className = 'status-badge online';
+    statusText.textContent = 'IA Local ⚡ 60 FPS';
+    btnStart.disabled = false;
+    btnLaunch.disabled = false;
+    console.log('✅ Hand2Emoji: Inferencia local activa!');
+
+  } catch (err) {
+    console.warn('⚠️ Fallback a API remota:', err);
+    useLocalEngine = false;
+    checkRemoteAPI();
+    setInterval(checkRemoteAPI, 5000);
+  }
+}
+
+async function checkRemoteAPI() {
   try {
     const r = await fetch(`${API_URL}/health`, { signal: AbortSignal.timeout(5000) });
     if (!r.ok) throw new Error();
-    statusPill.className   = 'status-pill online';
+    statusBadge.className = 'status-badge online';
     statusText.textContent = 'API online';
-    btnStart.disabled      = false;
-    btnOverlay.disabled    = false;
-    loadGestos();
+    btnStart.disabled = false;
+    btnLaunch.disabled = false;
+    loadRemoteGestos();
   } catch {
-    statusPill.className   = 'status-pill waking';
+    statusBadge.className = 'status-badge waking';
     statusText.textContent = 'Despertando servidor';
-    btnStart.disabled      = true;
-    btnOverlay.disabled    = true;
+    btnStart.disabled = true;
+    btnLaunch.disabled = true;
   }
 }
 
-async function loadGestos() {
+async function loadRemoteGestos() {
   try {
     const r = await fetch(`${API_URL}/gestos`);
     const d = await r.json();
-    chipsGrid.innerHTML = '';
-    d.gestos.forEach(g => {
-      const el = document.createElement('div');
-      el.className = 'chip';
-      el.id = `chip-${g.nombre}`;
-      el.innerHTML = `<span class="chip-em">${g.emoji}</span><span class="chip-nm">${g.nombre.replace(/_/g,' ')}</span>`;
-      chipsGrid.appendChild(el);
-    });
-  } catch(e) { console.warn('Error cargando gestos:', e); }
+    renderChips(d.gestos);
+  } catch(e) {}
 }
 
-// ── NORMALIZACIÓN ──
-function normalize(lms, W, H) {
+// ── NORMALIZACIÓN CANÓNICA CON ESPEJADO ──
+function normalizeCanonico(lms, lado, W, H) {
   const mx = lms[0].x * W, my = lms[0].y * H, mz = lms[0].z;
   const r9x = lms[9].x * W, r9y = lms[9].y * H, r9z = lms[9].z;
-  const s = Math.sqrt((r9x-mx)**2 + (r9y-my)**2 + (r9z-mz)**2) + 1e-6;
-  const xs=[], ys=[], zs=[];
+  const s = Math.sqrt((r9x - mx) ** 2 + (r9y - my) ** 2 + (r9z - mz) ** 2) + 1e-6;
+
+  const xs = [], ys = [], zs = [];
+  const factorX = (lado === 'Left') ? -1 : 1;
+
   for (const p of lms) {
-    xs.push((p.x*W - mx) / s);
-    ys.push((p.y*H - my) / s);
-    zs.push((p.z    - mz) / s);
+    xs.push(((p.x * W - mx) / s) * factorX);
+    ys.push((p.y * H - my) / s);
+    zs.push((p.z - mz) / s);
   }
-  return [...xs, ...ys, ...zs];
+  return new Float32Array([...xs, ...ys, ...zs]);
 }
 
 // ── PREDICCIÓN ──
 async function predict(lms, lado, W, H) {
+  if (useLocalEngine && onnxSession) {
+    try {
+      const features = normalizeCanonico(lms, lado, W, H);
+      const tensor = new ort.Tensor('float32', features, [1, 63]);
+      const outputMap = await onnxSession.run({ float_input: tensor });
+
+      const labelIdx = Number(outputMap.label.data[0]);
+      const probs = outputMap.probabilities.data;
+      const prob = Number(probs[labelIdx]);
+      const gesto = modelLabels[labelIdx];
+
+      return {
+        gesto: gesto,
+        emoji: modelEmojiMap[gesto] || '🫱',
+        confianza: Number(prob.toFixed(4)),
+        detectado: prob >= CONFIANZA_MINIMA
+      };
+    } catch(e) {}
+  }
+
+  // Fallback remoto
   try {
+    const mx = lms[0].x * W, my = lms[0].y * H, mz = lms[0].z;
+    const r9x = lms[9].x * W, r9y = lms[9].y * H, r9z = lms[9].z;
+    const s = Math.sqrt((r9x-mx)**2 + (r9y-my)**2 + (r9z-mz)**2) + 1e-6;
+    const xs=[], ys=[], zs=[];
+    for (const p of lms) {
+      xs.push((p.x*W - mx) / s);
+      ys.push((p.y*H - my) / s);
+      zs.push((p.z - mz) / s);
+    }
     const r = await fetch(`${API_URL}/predict`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ landmarks: normalize(lms, W, H), lado }),
+      body: JSON.stringify({ landmarks: [...xs, ...ys, ...zs], lado }),
       signal: AbortSignal.timeout(2000)
     });
     return await r.json();
   } catch { return null; }
 }
 
-// ── CONFIRMAR GESTO ──
+// ── CONFIRMAR GESTO Y ACCIONES ──
 function confirmar(res) {
   const { gesto, emoji } = res;
+
   if (gesto !== prevGesto) {
-    emojiMain.classList.remove('pop');
-    void emojiMain.offsetWidth;
-    emojiMain.classList.add('pop');
+    emojiCenter.classList.remove('pop');
+    void emojiCenter.offsetWidth;
+    emojiCenter.classList.add('pop');
     prevGesto = gesto;
   }
-  emojiMain.textContent   = emoji;
-  gestureName.textContent = gesto.replace(/_/g, ' ');
-  gestureName.className   = 'gesture-name active';
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+
+  emojiCenter.textContent = emoji;
+  gestureCaption.textContent = gesto.replace(/_/g, ' ');
+  gestureCaption.className = 'gesture-caption active';
+
+  document.querySelectorAll('.gesture-chip').forEach(c => c.classList.remove('active'));
   document.getElementById(`chip-${gesto}`)?.classList.add('active');
+
+  // Añadir al buffer y reproducir sonido háptico
+  appendToComposer(emoji);
+  playAcousticPop();
 
   state = 'cooldown'; candidate = null; holdStart = null;
   setRing(100, true);
+
   setTimeout(() => {
     state = 'listening'; candidate = null;
     setRing(0, false);
@@ -483,17 +1083,22 @@ function confirmar(res) {
 }
 
 function resetDisplay() {
-  emojiMain.textContent   = '🤚';
-  gestureName.textContent = 'muestra tu mano';
-  gestureName.className   = 'gesture-name';
+  emojiCenter.textContent = '🤚';
+  gestureCaption.textContent = 'Muestra tu mano';
+  gestureCaption.className = 'gesture-caption';
   setRing(0, false);
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.gesture-chip').forEach(c => c.classList.remove('active'));
   prevGesto = null;
 }
 
-// ── MEDIAPIPE ──
+// ── MEDIAPIPE PIPELINE (MINIMAL SURGICAL RENDERING) ──
 const hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
-hands.setOptions({ maxNumHands:1, modelComplexity:1, minDetectionConfidence:.75, minTrackingConfidence:.6 });
+hands.setOptions({
+  maxNumHands: 1,
+  modelComplexity: 1,
+  minDetectionConfidence: 0.75,
+  minTrackingConfidence: 0.6
+});
 
 hands.onResults(async results => {
   const W = video.videoWidth || 640, H = video.videoHeight || 480;
@@ -503,36 +1108,42 @@ hands.onResults(async results => {
   frames++;
   const now = Date.now();
   if (now - fpsT >= 1000) {
-    fpsLabel.textContent = `${frames} fps`;
+    fpsDisplay.textContent = `${frames} fps · 63 landmarks`;
     frames = 0; fpsT = now;
   }
 
   if (!results.multiHandLandmarks?.length) {
-    handTag.textContent = 'Sin mano detectada';
-    handTag.className   = 'hand-tag';
     if (state !== 'cooldown') { candidate = null; holdStart = null; state = 'listening'; }
     return;
   }
 
   const lms = results.multiHandLandmarks[0];
-  handTag.textContent = '✦ Mano detectada';
-  handTag.className   = 'hand-tag detected';
 
-  drawConnectors(ctx, lms, HAND_CONNECTIONS, { color:'rgba(167,139,250,.4)', lineWidth:1.5 });
-  drawLandmarks(ctx, lms, { color:'rgba(45,212,191,.8)', lineWidth:1, radius:3 });
+  // Renderizado quirúrgico, sobrio y fino
+  drawConnectors(ctx, lms, HAND_CONNECTIONS, { color: 'rgba(255, 255, 255, 0.28)', lineWidth: 1.2 });
+  drawLandmarks(ctx, lms, { color: 'rgba(255, 255, 255, 0.85)', lineWidth: 1, radius: 2.2 });
 
   if (state === 'cooldown' || now - lastCall < THROTTLE) return;
   lastCall = now;
 
   const lado = results.multiHandedness[0].label === 'Right' ? 'Left' : 'Right';
   const res  = await predict(lms, lado, W, H);
-  if (!res || !res.detectado) { candidate = null; holdStart = null; return; }
+  if (!res || !res.detectado) {
+    candidate = null;
+    holdStart = null;
+    setRing(0, false);
+    return;
+  }
 
   if (state === 'listening') {
-    candidate = res.gesto; holdStart = now; state = 'holding';
+    candidate = res.gesto;
+    holdStart = now;
+    state = 'holding';
   } else if (state === 'holding') {
     if (res.gesto !== candidate) {
-      candidate = res.gesto; holdStart = now; setRing(0, false);
+      candidate = res.gesto;
+      holdStart = now;
+      setRing(0, false);
     } else {
       const elapsed = now - holdStart;
       setRing(Math.min((elapsed / HOLD_MS) * 100, 100), false);
@@ -541,44 +1152,44 @@ hands.onResults(async results => {
   }
 });
 
-// ── CÁMARA ──
+// ── CONTROL DE CÁMARA ──
 async function startCam() {
-  btnStart.disabled = true;
-  btnStart.textContent = '⏳ Iniciando...';
-  startOvl.classList.add('hidden');
+  btnStart.style.display = 'none';
+  btnStop.style.display = 'inline-flex';
+  btnStop.disabled = false;
+  startScreen.classList.add('hidden');
+
   try {
     mpCam = new Camera(video, {
       onFrame: async () => { await hands.send({ image: video }); },
       width: 1280, height: 720
     });
     await mpCam.start();
-    btnStart.textContent = '✓ Activa';
-    btnStop.disabled = false;
-  } catch {
-    startOvl.classList.remove('hidden');
-    btnStart.disabled = false;
-    btnStart.textContent = '▶ Iniciar';
+  } catch(e) {
+    startScreen.classList.remove('hidden');
+    btnStart.style.display = 'inline-flex';
+    btnStop.style.display = 'none';
     alert('No se pudo acceder a la cámara.');
   }
 }
 
 function stopCam() {
   if (mpCam) { mpCam.stop(); mpCam = null; }
-  btnStart.disabled    = false; btnStart.textContent = '▶ Iniciar';
-  btnStop.disabled     = true;
-  startOvl.classList.remove('hidden');
+  btnStart.style.display = 'inline-flex';
+  btnStart.disabled = false;
+  btnStop.style.display = 'none';
+  btnStop.disabled = true;
+  startScreen.classList.remove('hidden');
   state = 'listening'; candidate = null; holdStart = null;
   resetDisplay();
 }
 
-btnStart.addEventListener('click',   startCam);
-btnStop.addEventListener('click',    stopCam);
-btnOverlay.addEventListener('click', startCam);
+btnStart.addEventListener('click', startCam);
+btnLaunch.addEventListener('click', startCam);
+btnStop.addEventListener('click', stopCam);
 
-// ── INIT ──
-checkAPI();
-setInterval(checkAPI, 5000);                                          // reintenta cada 5s
-setInterval(() => fetch(`${API_URL}/health`).catch(()=>{}), 14*60*1000); // keep-alive
+// ── INICIALIZACIÓN ──
+initLocalEngine();
 </script>
 </body>
 </html>

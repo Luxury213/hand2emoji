@@ -8,9 +8,7 @@ Reconocimiento de gestos de mano en tiempo real que convierte tus movimientos en
 
 ## Cómo funciona
 
-MediaPipe corre del lado del cliente y extrae 21 landmarks de la mano por frame. Esos landmarks se normalizan y se envían como 63 floats a un backend en FastAPI, donde un clasificador de scikit-learn predice el gesto y retorna el emoji correspondiente.
-
-El trabajo pesado (cámara + detección de mano) ocurre en el navegador del usuario. El servidor solo recibe números y devuelve una etiqueta, por eso el tier gratuito de Railway es más que suficiente.
+MediaPipe corre del lado del cliente y extrae 21 landmarks de la mano por frame. Esos landmarks se normalizan con **espejado canónico** (para zurdos y diestros) y se infieren al instante directamente en el propio navegador con **ONNX Runtime Web** (WebAssembly), logrando 60 FPS fluidos y latencia de ~1-3 ms sin enviar video a ningún servidor externo. La aplicación web funciona 100% on-device ($0 de hosting permanente en GitHub Pages) y mantiene fallback automático a la API en FastAPI si se requiere.
 
 ---
 
@@ -24,13 +22,15 @@ El trabajo pesado (cámara + detección de mano) ocurre en el navegador del usua
 
 ## Stack
 
-| | |
+| Componente | Tecnología |
 |---|---|
 | Detección de mano | MediaPipe Hands (client-side) |
-| Backend | FastAPI + Uvicorn |
-| Modelo | scikit-learn |
-| Frontend | GitHub Pages |
-| API | Railway |
+| Inferencia Web | ONNX Runtime Web (WebAssembly on-device, 28 KB) |
+| Frontend Web | HTML5 / CSS3 Minimalista (Plus Jakarta Sans, Web Audio API) |
+| Detector Desktop | OpenCV + Pillow (emojis Unicode en color real) + pyvirtualcam + pyautogui |
+| Backend (opcional/fallback) | FastAPI + Uvicorn |
+| Machine Learning | Scikit-learn + ONNX + Data Augmentation sintético |
+
 
 ---
 
@@ -54,18 +54,24 @@ Que los datos vengan de una sola persona significa que el modelo es intencionalm
 
 ```
 hand2emoji/
-├── api.py              # API REST
-├── detector.py         # lógica de inferencia
-├── recolector.py       # recolección de datos
-├── entrenador.py       # entrenamiento del modelo
-├── requirements.txt
+├── api.py                  # API REST (FastAPI + fallback)
+├── detector.py             # Detector de escritorio (Pillow + pyvirtualcam + macros)
+├── gestures_common.py      # Módulo común de normalización canónica y constantes
+├── recolector.py           # Recolección de datos con MediaPipe
+├── entrenador.py           # Entrenamiento, Data Augmentation y exportación ONNX
+├── requirements.txt        # Dependencias de producción (UTF-8 sin BOM)
+├── requirements-dev.txt    # Dependencias completas de desarrollo
+├── test_phase*.py          # Suites de pruebas automatizadas (Fases 1 a 5)
 ├── models/
-│   ├── modelo.pkl
-│   ├── scaler.pkl
-│   ├── labels.pkl
-│   └── metadata.pkl
-└── docs/
-    └── index.html      # frontend
+│   ├── modelo.onnx         # Modelo ligero optimizado (28 KB)
+│   ├── labels.json         # Metadatos para cliente web
+│   ├── modelo.pkl          # Modelo Pickle
+│   └── scaler.pkl
+└── docs/                   # GitHub Pages (Zero Backend)
+    ├── index.html          # Web App minimalista con Emoji Composer y Audio
+    ├── PLAN_DE_MEJORAS.md  # Hoja de ruta de 5 fases implementadas
+    ├── models/             # Activos ONNX servidos estáticamente
+    └── plan/               # Especificación técnica detallada por fase
 ```
 
 ## Qué aprendí

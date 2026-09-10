@@ -1,0 +1,42 @@
+{
+  "n_features": 63,
+  "classes": [
+    "corazon",
+    "dedos_cruzados",
+    "fuck_you",
+    "indice_abajo",
+    "indice_arriba",
+    "indice_derecha",
+    "indice_izquierda",
+    "italiano",
+    "llamame",
+    "mano_abierta",
+    "ok",
+    "paz",
+    "pinza",
+    "pulgar",
+    "puno",
+    "rock",
+    "te_apunto"
+  ],
+  "emoji_map": {
+    "corazon": "🫶",
+    "dedos_cruzados": "🤞",
+    "fuck_you": "🖕",
+    "indice_abajo": "👇",
+    "indice_arriba": "👆",
+    "indice_derecha": "👉",
+    "indice_izquierda": "👈",
+    "italiano": "🤌",
+    "llamame": "🤙",
+    "mano_abierta": "✋",
+    "ok": "👌",
+    "paz": "✌️",
+    "pinza": "🤏",
+    "pulgar": "👍",
+    "puno": "✊",
+    "rock": "🤘",
+    "te_apunto": "🫵"
+  },
+  "canonical_mirroring": true
+}

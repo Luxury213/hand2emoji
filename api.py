@@ -6,12 +6,15 @@ Endpoint principal: POST /predict
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from typing import List
 import numpy as np
 import pickle
 import os
 import time
 import uvicorn
+
+import gestures_common as gc
 
 
 # CONFIGURACIÓN
@@ -52,8 +55,8 @@ class ModeloHandler:
             with open(os.path.join(MODELS_DIR, 'metadata.pkl'), 'rb') as f:
                 self.metadata = pickle.load(f)
 
-            self.emoji_map = self.metadata['emoji_map']
-            self.gestos    = self.metadata['gestos']
+            self.emoji_map = self.metadata.get('emoji_map', gc.EMOJI_MAP)
+            self.gestos    = self.metadata.get('gestos', list(self.le.classes_))
             print(f"✅ Modelos cargados | {len(self.gestos)} gestos")
 
         except FileNotFoundError as e:
@@ -65,8 +68,13 @@ class ModeloHandler:
         Recibe 63 landmarks normalizados + lado
         Retorna gesto, emoji y confianza
         """
-        lado_num = 1 if lado == 'Right' else 0
-        features = landmarks + [lado_num]  # 64 features
+        n_features = self.metadata.get('n_features', 63)
+        if n_features == 63:
+            # Modelo canónico (Fase 2): espejado si es mano izquierda
+            features = gc.canonizar_vector_63(landmarks, lado)
+        else:
+            # Modelo legacy: 63 landmarks + lado_num
+            features = landmarks + [gc.lado_a_num(lado)]
 
         features_scaled = self.scaler.transform([features])
 
@@ -111,16 +119,23 @@ class LandmarksInput(BaseModel):
                  ya normalizados respecto a la muñeca
     - lado: 'Left' o 'Right'
     """
-    landmarks: list[float]
+    landmarks: List[float]
     lado: str
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "landmarks": [0.0] * 63,
                 "lado": "Right"
             }
         }
+    )
+
+
+class TopPrediccion(BaseModel):
+    gesto: str
+    emoji: str
+    confianza: float
 
 
 class PrediccionOutput(BaseModel):
@@ -128,7 +143,7 @@ class PrediccionOutput(BaseModel):
     emoji:     str
     confianza: float
     detectado: bool
-    top3:      list
+    top3:      List[TopPrediccion]
     tiempo_ms: float
 
 

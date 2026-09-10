@@ -13,6 +13,9 @@ from collections import deque
 import time
 
 
+import gestures_common as gc
+
+
 # ============================================================
 # CONFIGURACIÓN GLOBAL
 # ============================================================
@@ -25,50 +28,10 @@ MAX_MANOS        = 2
 class RecolectorGestos:
 
     # ----------------------------------------------------------
-    # EMOJI MAP CENTRALIZADO  
+    # EMOJI MAP Y TECLAS DESDE gestures_common
     # ----------------------------------------------------------
-    EMOJI_MAP = {
-        'italiano':         '🤌',
-        'rock con pulgar':        '🤟',
-        'rock':             '🤘',
-        'corazon':          '🫶',
-        'ok':               '👌',
-        'pulgar':           '👍',
-        'paz':              '✌️',
-        'puno':             '✊',
-        'llamame':          '🤙',
-        'mano_abierta':     '✋',
-        'indice_izquierda': '👈',
-        'indice_derecha':   '👉',
-        'indice_arriba':    '👆',
-        'indice_abajo':     '👇',
-        'dedos_cruzados':   '🤞',
-        'fuck_you': '🖕',
-        'te_apunto': '🫵',
-        'pinza':     '🤏',
-    }
-
-    # Tecla → nombre del gesto
-    GESTOS = {
-        ord('1'): 'italiano',
-        ord('2'): 'rock con pulgar',
-        ord('3'): 'rock',
-        ord('4'): 'corazon',
-        ord('5'): 'ok',
-        ord('6'): 'pulgar',
-        ord('7'): 'paz',
-        ord('8'): 'puno',
-        ord('9'): 'llamame',
-        ord('0'): 'mano_abierta',
-        ord('j'): 'indice_izquierda',
-        ord('k'): 'indice_derecha',
-        ord('p'): 'indice_arriba',
-        ord('o'): 'indice_abajo',
-        ord('l'): 'dedos_cruzados',
-        ord('f'): 'fuck_you',
-        ord('t'): 'te_apunto',
-        ord('m'): 'pinza',
-    }
+    EMOJI_MAP = gc.EMOJI_MAP
+    GESTOS    = gc.TECLAS_GESTOS
 
     def __init__(self):
         print("🎓 Inicializando recolector de gestos (versión mejorada)...")
@@ -138,32 +101,11 @@ class RecolectorGestos:
             print(f"⚠️  No se pudieron cargar contadores: {e}")
 
  
-    # EXTRACCIÓN DE CARACTERÍSTICAS 
-   
+    # EXTRACCIÓN DE CARACTERÍSTICAS
+    # ----------------------------------------------------------
     def extraer_caracteristicas(self, landmarks_raw):
-        """
-        Convierte los 21 puntos MediaPipe en 63 valores normalizados.
-
-        Normalización:
-          - Traslación: resta posición de la muñeca (punto 0)
-          - Escala:     divide por distancia muñeca→base_dedo_medio (punto 9)
-                        → invariante a distancia de la cámara
-
-        Retorna lista de 63 floats: [x0..x20, y0..y20, z0..z20]
-        """
-        muneca = np.array(landmarks_raw[0])   # (x, y, z)
-        ref    = np.array(landmarks_raw[9])   # base dedo medio
-
-        escala = np.linalg.norm(ref - muneca) + 1e-6  # evitar división 0
-
-        puntos = np.array(landmarks_raw)      # (21, 3)
-        norm   = (puntos - muneca) / escala   # (21, 3)
-
-        xs = norm[:, 0].tolist()
-        ys = norm[:, 1].tolist()
-        zs = norm[:, 2].tolist()
-
-        return xs + ys + zs   # 63 valores
+        """Convierte los 21 puntos MediaPipe en 63 valores normalizados usando gestures_common."""
+        return gc.extraer_caracteristicas_landmarks(landmarks_raw)
 
     # ----------------------------------------------------------
     # INTERFAZ VISUAL (MEJORADA)
